@@ -33,3 +33,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Password and email can't be same")
 
         return data
+
+
+class UserLoginSerializer(serializers.Serializer):
+    user_identifier = serializers.CharField()
+    password = serializers.CharField()
