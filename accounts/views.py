@@ -7,7 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .authentication import AccessTokenAuthentication
+from .authentication import AccessTokenAuthentication, RefreshTokenAuthentication
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UpdateUserSerializer
 from .utils import set_token
 
@@ -48,6 +48,23 @@ class UserLogin(APIView):
         data = {"access": access_token, "refresh": refresh_token}
 
         return Response({"message": "Logged in successfully", "data": data}, status=status.HTTP_201_CREATED)
+
+
+class RefreshToken(APIView):
+    authentication_classes = (RefreshTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        user = request.user
+        payload = request.auth
+
+        jti = payload["jti"]
+        caches['auth'].delete(f'user_{user.id} || {jti}')
+
+        access_token, refresh_token = set_token(request, user, caches)
+        data = {"access": access_token, "refresh": refresh_token}
+
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class UpdateProfile(UpdateAPIView):
