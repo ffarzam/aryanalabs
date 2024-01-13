@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .authentication import AccessTokenAuthentication, RefreshTokenAuthentication
-from .serializers import UserRegisterSerializer, UserLoginSerializer, UpdateUserSerializer
+from .serializers import UserRegisterSerializer, UserLoginSerializer, UpdateUserSerializer, ProfileSerializer
 from .utils import set_token
 
 
@@ -65,6 +65,17 @@ class RefreshToken(APIView):
         data = {"access": access_token, "refresh": refresh_token}
 
         return Response(data, status=status.HTTP_201_CREATED)
+
+
+class ShowProfile(APIView):
+    authentication_classes = (AccessTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ProfileSerializer
+
+    def get(self, request):
+        user = request.user
+        ser_data = self.serializer_class(user)
+        return Response(ser_data.data, status=status.HTTP_200_OK)
 
 
 class UpdateProfile(UpdateAPIView):
