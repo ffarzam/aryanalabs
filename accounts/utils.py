@@ -3,6 +3,7 @@ import jwt
 from uuid import uuid4
 
 from django.conf import settings
+from django.core.mail import EmailMessage
 
 
 def generate_access_token(user_id, jti):
@@ -64,3 +65,14 @@ def set_token(request, user, caches):
     value = cache_value_setter(request)
     caches['auth'].set(key, value)
     return access_token, refresh_token
+
+
+def send_email(data):
+
+    email = EmailMessage(
+        subject=data['email_subject'],
+        body=data["email_body"],
+        to=data["to_email"]
+    )
+
+    email.send(fail_silently=False)

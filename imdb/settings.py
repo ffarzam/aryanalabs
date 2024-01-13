@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    "accounts"
+    "accounts",
+    "film",
 ]
 
 MIDDLEWARE = [
@@ -177,6 +178,14 @@ CACHES = {
     },
 
 }
+
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST')
+RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT')
+RABBITMQ_USERNAME = os.environ.get('RABBITMQ_USERNAME')
+RABBITMQ_PASSWORD = os.environ.get('RABBITMQ_PASSWORD')
+CELERY_BROKER_URL = f'amqp://{RABBITMQ_HOST}'
+CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}/3'
+
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT')
 RABBITMQ_USERNAME = os.environ.get('RABBITMQ_USERNAME')

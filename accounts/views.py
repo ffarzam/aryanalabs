@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from .authentication import AccessTokenAuthentication, RefreshTokenAuthentication
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UpdateUserSerializer, ProfileSerializer, \
     ChangePasswordSerializer
+from .tasks import send_login_notification
 from .utils import set_token, cache_key_parser
 
 
@@ -34,7 +35,7 @@ class UserLogin(APIView):
     permission_classes = (AllowAny,)
     serializer_class = UserLoginSerializer
 
-    def post(self, request):
+    def post(self, request,):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user_identifier = serializer.validated_data.get('user_identifier')
@@ -47,6 +48,7 @@ class UserLogin(APIView):
 
         access_token, refresh_token = set_token(request, user, caches)
         data = {"access": access_token, "refresh": refresh_token}
+        send_login_notification.delay(user.email)
 
         return Response({"message": "Logged in successfully", "data": data}, status=status.HTTP_201_CREATED)
 
