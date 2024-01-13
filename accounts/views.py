@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from .authentication import AccessTokenAuthentication, RefreshTokenAuthentication
 from .serializers import UserRegisterSerializer, UserLoginSerializer, UpdateUserSerializer, ProfileSerializer, \
     ChangePasswordSerializer
-from .utils import set_token
+from .utils import set_token, cache_key_parser
 
 
 # Create your views here.
@@ -117,3 +117,61 @@ class DeleteUser(APIView):
 
         return Response({"message": "Deleting process has been successfully done"})
 
+
+class LogoutView(APIView):
+    authentication_classes = (RefreshTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        try:
+            payload = request.auth
+            user = request.user
+            jti = payload["jti"]
+            caches['auth'].delete(f'user_{user.id} || {jti}')
+
+            return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CheckAllActiveLogin(APIView):
+    authentication_classes = (AccessTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        user = request.user
+
+        active_login_data = []
+        for key, value in caches['auth'].get_many(caches['auth'].keys(f'user_{user.id} || *')).items():
+            jti = cache_key_parser(key)[1]
+
+            active_login_data.append({
+                "jti": jti,
+                "user_agent": value,
+            })
+
+        return Response(active_login_data, status=status.HTTP_200_OK)
+
+
+class LogoutAll(APIView):
+    authentication_classes = (RefreshTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        user = request.user
+        caches['auth'].delete_many(caches['auth'].keys(f'user_{user.id} || *'))
+
+        return Response({"message": "All accounts logged out"}, status=status.HTTP_200_OK)
+
+
+class SelectedLogout(APIView):
+    authentication_classes = (AccessTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        user = request.user
+        jti = request.data.get("jti")
+        caches['auth'].get(f'user_{user.id} || {jti}')
+        caches['auth'].delete(f'user_{user.id} || {jti}')
+
+        return Response({"message": "Chosen account was successfully logged out"}, status=status.HTTP_200_OK)
