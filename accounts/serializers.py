@@ -74,3 +74,37 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         exclude = ["password", "groups", "user_permissions"]
+
+
+class ChangePasswordSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password2 = serializers.CharField(write_only=True)
+    old_password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ('old_password', 'password', 'password2')
+
+    def validate(self, data):
+        user = self.context['request'].user
+        if data['password'] != data['password2']:
+            raise serializers.ValidationError("Passwords don't match")
+        if user.email == data['password']:
+            raise serializers.ValidationError("Password and email can't be same")
+        if data['password'] == user.username:
+            raise serializers.ValidationError("Password and username can't be same")
+
+        return super().validate(data)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is not correct")
+        return value
+
+    def update(self, instance, validated_data):
+
+        instance.set_password(validated_data['password'])
+        instance.save()
+
+        return instance
