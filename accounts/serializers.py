@@ -38,3 +38,33 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class UserLoginSerializer(serializers.Serializer):
     user_identifier = serializers.CharField()
     password = serializers.CharField()
+
+
+class UpdateUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email')
+
+    def validate(self, data):
+        user = self.context['request'].user
+        if data['email'] == data['username']:
+            raise serializers.ValidationError("Email and username can't be same")
+        if user.check_password(data['username']):
+            raise serializers.ValidationError("Password and username can't be same")
+        if user.check_password(data['email']):
+            raise serializers.ValidationError("Password and email can't be same")
+        return super().validate(data)
+
+    def validate_username(self, value):
+        if len(value) < 6:
+            raise serializers.ValidationError('Username must be more than 6 characters long')
+        return value
+
+    def update(self, instance, validated_data):
+
+        instance.username = validated_data['username']
+        instance.email = validated_data['email']
+
+        instance.save()
+
+        return instance
