@@ -2,11 +2,13 @@ from django.contrib.auth import authenticate
 from django.core.cache import caches
 from django.shortcuts import render
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.generics import UpdateAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import UserRegisterSerializer, UserLoginSerializer
+from .authentication import AccessTokenAuthentication
+from .serializers import UserRegisterSerializer, UserLoginSerializer, UpdateUserSerializer
 from .utils import set_token
 
 
@@ -46,3 +48,13 @@ class UserLogin(APIView):
         data = {"access": access_token, "refresh": refresh_token}
 
         return Response({"message": "Logged in successfully", "data": data}, status=status.HTTP_201_CREATED)
+
+
+class UpdateProfile(UpdateAPIView):
+    http_method_names = ["patch"]
+    authentication_classes = (AccessTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+    serializer_class = UpdateUserSerializer
+
+    def get_object(self):
+        return self.request.user
