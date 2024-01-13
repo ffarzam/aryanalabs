@@ -1,3 +1,4 @@
+from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 
 from django.db import models
@@ -14,6 +15,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True, editable=False)
     last_modify = models.DateTimeField(auto_now=True, editable=False)
     is_account_enable = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'username'
 
@@ -21,5 +23,16 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomManager()
 
+    def delete(self):
+        self.is_deleted = True
+        self.save()
+
     def __str__(self):
         return self.username
+
+
+class RecycleUser(CustomUser):
+    delete_object = BaseUserManager()
+
+    class Meta:
+        proxy = True
