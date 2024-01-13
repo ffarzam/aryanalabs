@@ -102,3 +102,18 @@ class ChangePasswordView(UpdateAPIView):
         self.perform_update(serializer)
         caches['auth'].delete_many(caches['auth'].keys(f'user_{instance.id} || *'))
         return Response({"message": "Password has been successfully updated"})
+
+
+class DeleteUser(APIView):
+    authentication_classes = (AccessTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        instance = request.user
+        instance.delete()
+
+        user = request.user
+        caches['auth'].delete_many(caches['auth'].keys(f'user_{user.id} || *'))
+
+        return Response({"message": "Deleting process has been successfully done"})
+
