@@ -1,7 +1,16 @@
 from django.contrib.auth.models import BaseUserManager
+from django.db.models import QuerySet
+
+
+class AppQuerySet(QuerySet):
+    def delete(self):
+        self.update(is_deleted=True)
 
 
 class CustomManager(BaseUserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
     def create_user(self, email, username, password):
         if not email:
             raise ValueError("Users must have an email")
