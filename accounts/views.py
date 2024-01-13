@@ -8,7 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .authentication import AccessTokenAuthentication, RefreshTokenAuthentication
-from .serializers import UserRegisterSerializer, UserLoginSerializer, UpdateUserSerializer, ProfileSerializer
+from .serializers import UserRegisterSerializer, UserLoginSerializer, UpdateUserSerializer, ProfileSerializer, \
+    ChangePasswordSerializer
 from .utils import set_token
 
 
@@ -86,3 +87,18 @@ class UpdateProfile(UpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ChangePasswordView(UpdateAPIView):
+    http_method_names = ["patch"]
+    authentication_classes = (AccessTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ChangePasswordSerializer
+
+    def patch(self, request, *args, **kwargs):
+        instance = request.user
+        serializer = self.serializer_class(instance, data=request.data, partial=True, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        caches['auth'].delete_many(caches['auth'].keys(f'user_{instance.id} || *'))
+        return Response({"message": "Password has been successfully updated"})
