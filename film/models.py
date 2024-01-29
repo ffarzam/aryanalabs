@@ -39,3 +39,12 @@ class Score(models.Model):
     film = models.ForeignKey(Film, on_delete=models.PROTECT)
     score = models.PositiveIntegerField(validators=[MinValueValidator(0), MaxValueValidator(5)],null=True)
     scored_at = models.DateTimeField(auto_now=True)
+
+
+
+class Critique(models.Model):
+    date_submitted = models.DateTimeField(auto_now_add=True)
+    is_sploiler = models.BooleanField(default=False)
+    content = models.TextField()
+    writer = models.ForeignKey(CustomUser, on_delete=models.PROTECT)
+    film = models.ForeignKey(Film, on_delete=models.CASCADE)
