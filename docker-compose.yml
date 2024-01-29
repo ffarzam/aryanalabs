@@ -72,6 +72,36 @@ services:
     volumes:
       - .:/code/
 
+  esearch:
+    mem_limit: 512m
+    image: elasticsearch:7.14.2
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - main
+    environment:
+      discovery.type: 'single-node'
+      xpack.security.enabled: 'false'
+      ELASTIC_PASSWORD: 'elastic'
+      network.bind_host: 0.0.0.0
+      network.host: 0.0.0.0
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+
+
+  kibana:
+    mem_limit: 512m
+    image: kibana:7.14.2
+    ports:
+      - 5601:5601
+    networks:
+      - main
+    volumes:
+      - kibana_data:/usr/share/kibana/config
+    environment:
+      ELASTICSEARCH_HOSTS: "http://esearch:9200"
+
   flower:
     container_name: flower
     build: .
@@ -96,9 +126,10 @@ networks:
 volumes:
   postgres_data:
   redis_data:
-  flower_data:
   rabbitmq_data:
   rabbitmq_log:
+  elastic_data:
+  kibana_data:
 
 
 
