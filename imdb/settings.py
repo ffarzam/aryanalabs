@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    "django_elasticsearch_dsl",
+
     "accounts",
     "film",
 ]
@@ -178,6 +181,14 @@ CACHES = {
     },
 
 }
+
+ELASTICSEARCH_DSL={
+    'default': {
+        'hosts': 'esearch:9200',
+        'http_auth': ('username', 'password')
+    }
+}
+
 
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST')
 RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT')
