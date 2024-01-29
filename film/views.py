@@ -1,17 +1,22 @@
-from django.shortcuts import render
+from datetime import datetime
+
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.http.response import JsonResponse
 from rest_framework.views import APIView
 
 from .models import Film, Like, Score
-from .serializers import FilmSerializer
+from .serializers import FilmSerializer,FilmWithCritiquesSerializer
 from .utils import FilmPagination
 from accounts.authentication import AccessTokenAuthentication
-
+from imdb.elastic import ES_CONNECTION
+from .documents import FILMS_SEARCH_FIELDS,CRITIQUE_SEARCH_FIELDS
 
 # Create your views here.
+
+index_name = "task"
 
 
 class FilmList(ListAPIView):
@@ -62,3 +67,41 @@ class ScoreFilm(APIView):
         film_score = film.score_amounts
 
         return Response({'film_score': film_score}, status=status.HTTP_200_OK)
+
+
+
+class SearchFilmView(APIView):
+    def get(self, request, *args, **kwargs):
+        print(request.GET)
+
+        query_dict = {}
+        for query_api_name,query_db_name in FILMS_SEARCH_FIELDS.items():
+            if value:=request.GET.get(query_api_name):
+                print(f"{query_db_name}: {value}")
+                query_dict[query_db_name] = value
+
+        query = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {"match":
+                            {
+                                query_db_name: value
+                            }
+                        } for query_db_name,value in query_dict.items()
+                    ]
+                }
+            }
+        }
+
+        try:
+            result = ES_CONNECTION.search(index=index_name, body=query)
+            print(result)
+            hits = result['hits']['hits']
+            response_data = [{'id': hit['_id'], 'source': hit['_source']} for hit in hits]
+            return JsonResponse({'data': response_data})
+
+        except Exception as e:
+            raise e
+            return JsonResponse({'error': str(e)}, status=500)
+
