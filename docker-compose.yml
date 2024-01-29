@@ -1,0 +1,104 @@
+services:
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management
+    networks:
+      - main
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq/
+      - rabbitmq_log:/var/log/rabbitmq
+    restart: always
+
+  postgres:
+    container_name: postgres
+    image: postgres:14.0
+    environment:
+      POSTGRES_USER: ${USER}
+      POSTGRES_PASSWORD: ${PASSWORD}
+      POSTGRES_DB: ${NAME}
+    networks:
+      - main
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  aryanaapp:
+    build: .
+    container_name: aryanaapp
+    volumes:
+      - .:/code/
+    networks:
+      - default
+      - main
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - 8000:8000
+    restart: always
+
+
+  redis:
+    container_name: redis
+    image: redis:7.2
+    networks:
+      - main
+    ports:
+      - 6379:6379
+    restart: always
+    volumes:
+      - redis_data:/data
+
+
+  celery:
+    container_name: celery
+    build: .
+    command: celery -A imdb worker -l INFO
+    depends_on:
+      - rabbitmq
+      - redis
+      - aryanaapp
+    environment:
+      - C_FORCE_ROOT="true"
+    networks:
+      - main
+    restart: always
+    volumes:
+      - .:/code/
+
+  flower:
+    container_name: flower
+    build: .
+    command: celery -A imdb flower
+    networks:
+      - main
+    ports:
+      - 5555:5555
+    depends_on:
+      - rabbitmq
+      - celery
+
+    volumes:
+      - flower_data:/flower_data
+    restart: always
+
+
+
+networks:
+  main:
+
+volumes:
+  postgres_data:
+  redis_data:
+  flower_data:
+  rabbitmq_data:
+  rabbitmq_log:
+
+
+
